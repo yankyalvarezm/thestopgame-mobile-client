@@ -34,7 +34,7 @@ export default function GameModes() {
           title="Play Solo"
           imageSrc={require("../assets/images/play-solo.png")}
           labelSide="right"
-          href="/"
+          href="/categories"
         />
         <GameModeContainer
           title="Play Online"

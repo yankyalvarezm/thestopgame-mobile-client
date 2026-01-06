@@ -1,8 +1,12 @@
 import { Link } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useState } from "react";
+import ModalHowToPlay from "../components/ModalHowToPlay";
 
 export default function Index() {
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       {/* Padre flex-col */}
@@ -24,7 +28,10 @@ export default function Index() {
               </Pressable>
             </Link>
 
-            <Pressable className="bg-black px-4 py-2 rounded-md border border-black active:opacity-70 min-w-[170] min-h-[40] items-center justify-center">
+            <Pressable
+              onPress={() => setShowHowToPlay(true)}
+              className="bg-black px-4 py-2 rounded-md border border-black active:opacity-70 min-w-[170] min-h-[40] items-center justify-center"
+            >
               <Text className="text-white font-light">How To Play</Text>
             </Pressable>
           </View>
@@ -46,6 +53,12 @@ export default function Index() {
           </Text>
         </View>
       </View>
+
+      {/* Modal How To Play */}
+      <ModalHowToPlay
+        visible={showHowToPlay}
+        onClose={() => setShowHowToPlay(false)}
+      />
     </SafeAreaView>
   );
 }
