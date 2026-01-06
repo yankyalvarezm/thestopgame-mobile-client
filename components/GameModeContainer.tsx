@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,34 +10,36 @@ import { useRouter } from "expo-router";
 
 type Props = {
   title: string;
-  imageSrc: ImageSourcePropType; // require(...) o { uri: "..." }
-  href: string; // a dónde navegar
-  labelSide?: "left" | "right"; // default: left
-  heightClassName?: string; // default: "h-56"
+  imageSrc: ImageSourcePropType;
+  href: string;
+  onPress?: () => void;
+  labelSide?: "left" | "right";
+  heightClassName?: string;
 };
 
 export default function GameModeContainer({
   title,
   imageSrc,
   href,
+  onPress,
   labelSide = "left",
   heightClassName = "h-52",
 }: Props) {
   const router = useRouter();
 
+  const handlePress = () => {
+    if (onPress) return onPress();
+    if (href) return router.push(href as any);
+    console.log("Pressed:", title);
+  };
+
   return (
-    <Pressable
-      onPress={() => router.push(href as any)}
-      className="w-full active:opacity-90"
-    >
+    <Pressable onPress={handlePress} className="w-full active:opacity-90">
       <View className=" w-full overflow-hidden relative">
         <Image
           source={imageSrc}
           className={`w-full ${heightClassName}  mb-0`}
           resizeMode="cover"
-        //   style={{
-        //     transform: [{ translateY: 20 }],
-        //   }}
         />
 
         <View className={`absolute bottom-10 ${labelSide}-0`}>
