@@ -16,6 +16,15 @@ export default function RootLayout() {
           name="categories"
           options={{ headerShown: false, title: "Categories" }}
         />
+        <Stack.Screen
+          name="Login"
+          options={{ headerShown: false, title: "Login" }}
+        />
+        <Stack.Screen
+          name="SignUp"
+          options={{ headerShown: false, title: "Login" }}
+        />
+      
     </Stack>
   );
 }

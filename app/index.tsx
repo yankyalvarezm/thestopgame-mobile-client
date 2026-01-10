@@ -3,6 +3,9 @@ import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import ModalHowToPlay from "../components/ModalHowToPlay";
+import PlayNow from "../components/PlayNow";
+import HowToPlay from "../components/HowToPlay";
+import LogOut from "../components/LogOut";
 
 export default function Index() {
   const [showHowToPlay, setShowHowToPlay] = useState(false);
@@ -21,19 +24,14 @@ export default function Index() {
             Un juego dominicano, hecho por dominicanos 🇩🇴
           </Text>
 
-          <View className="mt-6 flex-row gap-3">
-            <Link href="/gameModes" asChild>
-              <Pressable className="bg-white px-4 py-2 rounded-md border border-black active:opacity-70 min-w-[170] min-h-[40] items-center justify-center">
-                <Text className="text-black font-light">Play Now</Text>
-              </Pressable>
-            </Link>
-
-            <Pressable
-              onPress={() => setShowHowToPlay(true)}
-              className="bg-black px-4 py-2 rounded-md border border-black active:opacity-70 min-w-[170] min-h-[40] items-center justify-center"
-            >
-              <Text className="text-white font-light">How To Play</Text>
-            </Pressable>
+          <View className="mt-6 flex-col gap-3">
+            <View className="flex-row gap-3">
+              <PlayNow />
+              <HowToPlay onPress={() => setShowHowToPlay(true)} />
+            </View>
+            <View className="flex-row w-full gap-3">
+              <LogOut />
+            </View>
           </View>
           <View className="mt-6">
             <Text className="text-xs text-gray-500 text-center">
