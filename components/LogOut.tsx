@@ -8,7 +8,7 @@ const LogOut = () => {
     const res = await logout();
     console.log("logout res:", res);
     if (res.success) {
-      router.replace("/Login");
+      router.replace("/");
     } else {
       Alert.alert("Error", "Failed to logout");
     }

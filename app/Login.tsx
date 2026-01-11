@@ -9,11 +9,11 @@ import {
   Alert,
 } from "react-native";
 import { Image } from "expo-image";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import TheStopGameTitle from "@/components/TheStopGameTitle";
 import { login } from "@/services/auth.service";
 import { router } from "expo-router";
-// Componente para el logo de Google
+import GoogleCredentials from "@/components/GoogleCredentials";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -21,18 +21,13 @@ export default function Login() {
 
   const handleLogin = async () => {
     const res = await login(email, password);
-    console.log("login res:", res);
+    // console.log("login res:", res);
 
     if (res.success) {
       router.replace("/gameModes");
     } else {
       Alert.alert("Error", res.message);
     }
-  };
-
-  const handleGoogleSignIn = () => {
-    // Lógica de Google Sign In aquí
-    console.log("Google Sign In");
   };
 
   return (
@@ -47,21 +42,7 @@ export default function Login() {
         </View>
         <View className="bg-gray-100 rounded-2xl p-6 w-full max-w-md">
           {/* Botón Sign in with Google */}
-          <Pressable
-            onPress={handleGoogleSignIn}
-            className="bg-white rounded-lg p-4 flex-row items-center justify-center active:opacity-80 mb-4 border border-gray-200"
-          >
-            {/* Logo de Google */}
-            <Image
-              source={require("../assets/images/google-logo.png")}
-              style={{ width: 20, height: 20, marginRight: 12 }}
-              contentFit="contain"
-            />
-
-            <Text className="text-black text-base font-light">
-              Sign in with google
-            </Text>
-          </Pressable>
+          <GoogleCredentials />
 
           {/* Separador "or" */}
           <View className="flex-row items-center justify-center mb-4">

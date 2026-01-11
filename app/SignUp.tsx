@@ -106,7 +106,7 @@ export default function SignUp() {
               contentFit="contain"
             />
             <Text className="text-black text-base font-light">
-              Sign in with google
+              Sign up with google
             </Text>
           </Pressable>
 

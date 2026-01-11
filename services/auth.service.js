@@ -59,7 +59,11 @@ export async function login(email, password) {
     const user = res.data?.data?.user;
 
     if (!token) {
-      return { success: false, status: res.status, message: "NO_TOKEN_IN_RESPONSE" };
+      return {
+        success: false,
+        status: res.status,
+        message: "NO_TOKEN_IN_RESPONSE",
+      };
     }
 
     await SecureStore.setItemAsync("accessToken", token);
@@ -67,7 +71,8 @@ export async function login(email, password) {
     return { success: true, status: res.status, user };
   } catch (err) {
     const status = err?.response?.status || 0;
-    const message = err?.response?.data?.message || err?.message || "LOGIN_ERROR";
+    const message =
+      err?.response?.data?.message || err?.message || "LOGIN_ERROR";
 
     return { success: false, status, message };
   }
@@ -100,3 +105,48 @@ export async function logout() {
 
   return { success: true };
 }
+
+export const googleAuth = async (idToken) => {
+  try {
+    const res = await axios.post(
+      `${API_URL}/auth/google`,
+      { idToken },
+      { headers: { "Content-Type": "application/json" } }
+    );
+
+    // Unifica shapes posibles del backend
+    const token = res?.data?.data?.token ?? res?.data?.token ?? null;
+
+    const user = res?.data?.data?.user ?? res?.data?.user ?? null;
+
+    const isNewUser =
+      res?.data?.data?.isNewUser ?? res?.data?.isNewUser ?? false;
+
+    // 🔒 Validación fuerte del token
+    if (!token || typeof token !== "string") {
+      console.error("INVALID TOKEN FROM BACKEND:", token);
+      return {
+        success: false,
+        status: res.status,
+        message: "INVALID_TOKEN_FROM_BACKEND",
+      };
+    }
+
+    await SecureStore.setItemAsync("accessToken", token);
+
+    return {
+      success: true,
+      status: res.status,
+      user,
+      isNewUser,
+    };
+  } catch (err) {
+    console.error("GOOGLE AUTH SERVICE ERROR:", err);
+
+    const status = err?.response?.status || 0;
+    const message =
+      err?.response?.data?.message || err?.message || "GOOGLE_AUTH_ERROR";
+
+    return { success: false, status, message };
+  }
+};
