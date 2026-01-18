@@ -24,7 +24,10 @@ export default function RootLayout() {
           name="SignUp"
           options={{ headerShown: false, title: "Login" }}
         />
-      
+        <Stack.Screen
+          name="setupsolo"
+          options={{ headerShown: false, title: "Setup Solo" }}
+        />
     </Stack>
   );
 }
