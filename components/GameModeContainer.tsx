@@ -12,6 +12,8 @@ type Props = {
   title: string;
   imageSrc: ImageSourcePropType;
   href: string;
+  gameMode: "solo" | "online" | "friends";
+  onSelectGameMode?: (mode: string) => void;
   onPress?: () => void;
   labelSide?: "left" | "right";
   heightClassName?: string;
@@ -22,14 +24,25 @@ export default function GameModeContainer({
   imageSrc,
   href,
   onPress,
+  gameMode,
+  onSelectGameMode,
   labelSide = "left",
   heightClassName = "h-52",
 }: Props) {
   const router = useRouter();
 
   const handlePress = () => {
+    onSelectGameMode?.(gameMode);
+
     if (onPress) return onPress();
-    if (href) return router.push(href as any);
+
+    if (href) {
+      return router.push({
+        pathname: href as any,
+        params: { gameMode },
+      } as any);
+    }
+
     console.log("Pressed:", title);
   };
 

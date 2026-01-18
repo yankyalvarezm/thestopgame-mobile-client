@@ -11,6 +11,8 @@ export async function me() {
   try {
     const token = await getAccessToken();
 
+    console.log("token:", token);
+
     if (!token) {
       return { success: false, status: 0, message: "NO_TOKEN" };
     }

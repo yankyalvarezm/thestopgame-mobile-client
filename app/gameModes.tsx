@@ -8,6 +8,7 @@ import ModalJoinCreate from "@/components/ModalJoinCreate";
 
 export default function GameModes() {
   const [showModal, setShowModal] = useState(false);
+  const [gameMode, setGameMode] = useState<string | null>(null);
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -27,7 +28,9 @@ export default function GameModes() {
           title="Play with Friends"
           imageSrc={require("../assets/images/play-with-friends.png")}
           labelSide="left"
-          href="/playWithFriends"
+          href="/categories"
+          gameMode="friends"
+          onSelectGameMode={(mode) => setGameMode(mode)}
           onPress={() => setShowModal(true)}
         />
         <GameModeContainer
@@ -35,12 +38,16 @@ export default function GameModes() {
           imageSrc={require("../assets/images/play-solo.png")}
           labelSide="right"
           href="/categories"
+          gameMode="solo"
+          onSelectGameMode={(mode) => setGameMode(mode)}
         />
         <GameModeContainer
           title="Play Online"
           imageSrc={require("../assets/images/play-online-adjusted.png")}
           labelSide="left"
-          href="/"
+          href="/categories"
+          gameMode="online"
+          onSelectGameMode={(mode) => setGameMode(mode)}
         />
 
         {/* ⬇️ Copyright abajo */}
