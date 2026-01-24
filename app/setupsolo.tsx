@@ -9,10 +9,14 @@ import {
 import React, { useState } from "react";
 import TheStopGameTitle from "../components/TheStopGameTitle";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 export default function SetupSolo() {
-  const { gameMode } = useLocalSearchParams<{ gameMode?: string }>();
+  const { gameMode, selistName } = useLocalSearchParams<{
+    gameMode?: string;
+    selistName?: string;
+  }>();
+  const router = useRouter();
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">(
     "medium"
   );
@@ -25,8 +29,16 @@ export default function SetupSolo() {
   const timerOptions = [10, 15, 20, 30, 45, 60, 90, 120, 9999999999999];
 
   const handleStart = () => {
-    // TODO: Implementar lógica de inicio del juego
-    console.log("Start game:", { gameMode, difficulty, rounds, timer });
+    router.push({
+      pathname: "/gameplay",
+      params: {
+        gameMode: gameMode || "",
+        selistName: selistName || "",
+        difficulty,
+        rounds: rounds.toString(),
+        timer: timer.toString(),
+      },
+    });
   };
 
   return (

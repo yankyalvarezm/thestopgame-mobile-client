@@ -13,9 +13,10 @@ type SetlistItem = {
 
 type Props = {
   gameMode?: string;
+  onSetlistChange?: (setlist: SetlistItem | null) => void;
 };
 
-export default function Setlist({ gameMode }: Props) {
+export default function Setlist({ gameMode, onSetlistChange }: Props) {
   const [setlists, setSetlists] = useState<SetlistItem[]>([]);
   const [selectedSetlist, setSelectedSetlist] = useState<SetlistItem | null>(
     null
@@ -23,6 +24,7 @@ export default function Setlist({ gameMode }: Props) {
 
   const handleSelectSetlist = (setlist: SetlistItem) => {
     setSelectedSetlist(setlist);
+    onSetlistChange?.(setlist);
   };
 
   useEffect(() => {

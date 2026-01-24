@@ -1,13 +1,33 @@
 import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import TheStopGameTitle from "../components/TheStopGameTitle";
 import Setlist from "../components/Setlist";
+
+type SetlistItem = {
+  _id: string;
+  name: string;
+  icon?: string;
+  isCustom?: boolean;
+  subtitle?: string;
+};
 
 export default function Categories() {
   const { gameMode } = useLocalSearchParams<{ gameMode?: string }>();
   const router = useRouter();
+  const [selectedSetlist, setSelectedSetlist] = useState<SetlistItem | null>(
+    null
+  );
+
+  useEffect(() => {
+    console.log(
+      "Seletist--->>>>",
+      selectedSetlist?.name,
+      "gameMode------->>>",
+      gameMode
+    );
+  }, [selectedSetlist, gameMode]);
   // console.log("Game Mode:", gameMode);
 
   const handleContinue = () => {
@@ -20,7 +40,7 @@ export default function Categories() {
       case "solo":
         router.push({
           pathname: "/setupsolo",
-          params: { gameMode },
+          params: { gameMode, selistName: selectedSetlist?.name },
         });
         break;
       case "friends":
@@ -30,7 +50,7 @@ export default function Categories() {
         // TODO: Navegar a la página de online cuando esté disponible
         router.push({
           pathname: "/setupsolo",
-          params: { gameMode },
+          params: { gameMode, selistName: selectedSetlist?.name },
         });
         console.log("/setupsolo");
         break;
@@ -50,7 +70,7 @@ export default function Categories() {
           Elige tu setlist favorito
         </Text>
 
-        <Setlist gameMode={gameMode} />
+        <Setlist gameMode={gameMode} onSetlistChange={setSelectedSetlist} />
 
         <View className="pb-6 pt-4">
           <Pressable
