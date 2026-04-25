@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState, useEffect } from "react";
@@ -8,6 +8,14 @@ import Setlist from "../components/Setlist";
 type SetlistItem = {
   _id: string;
   name: string;
+  categories?: {
+    name: string;
+    label?: string;
+    index: number;
+    level: string;
+    language: string;
+  }[];
+  availableLanguages?: string[];
   icon?: string;
   isCustom?: boolean;
   subtitle?: string;
@@ -36,11 +44,24 @@ export default function Categories() {
       return;
     }
 
+    if (!selectedSetlist || selectedSetlist.isCustom) {
+      console.warn("No backend setlist selected");
+      return;
+    }
+
+    const setupParams = {
+      gameMode,
+      selistName: selectedSetlist.name,
+      setlistId: selectedSetlist._id,
+      availableLanguages: JSON.stringify(selectedSetlist.availableLanguages || []),
+      setlistCategories: JSON.stringify(selectedSetlist.categories || []),
+    };
+
     switch (gameMode) {
       case "solo":
         router.push({
           pathname: "/setupsolo",
-          params: { gameMode, selistName: selectedSetlist?.name },
+          params: setupParams,
         });
         break;
       case "friends":
@@ -50,7 +71,7 @@ export default function Categories() {
         // TODO: Navegar a la página de online cuando esté disponible
         router.push({
           pathname: "/setupsolo",
-          params: { gameMode, selistName: selectedSetlist?.name },
+          params: setupParams,
         });
         console.log("/setupsolo");
         break;
@@ -75,7 +96,12 @@ export default function Categories() {
         <View className="pb-6 pt-4">
           <Pressable
             onPress={handleContinue}
-            className="bg-black rounded-lg py-4 active:opacity-80"
+            disabled={!selectedSetlist || selectedSetlist.isCustom}
+            className={`rounded-lg py-4 active:opacity-80 ${
+              selectedSetlist && !selectedSetlist.isCustom
+                ? "bg-black"
+                : "bg-gray-300"
+            }`}
           >
             <Text className="text-white text-lg font-medium text-center">
               Continue
@@ -86,5 +112,3 @@ export default function Categories() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({});

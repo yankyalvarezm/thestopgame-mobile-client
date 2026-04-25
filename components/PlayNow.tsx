@@ -32,7 +32,8 @@ export default function PlayNow() {
     <Pressable
       onPress={handlePlayNow}
       disabled={loading}
-      className={`bg-white px-4 py-2 rounded-md border border-black min-w-[170] min-h-[40] items-center justify-center ${
+      style={{ width: "100%" }}
+      className={`w-full bg-white px-4 py-2 rounded-md border border-black min-h-[40] items-center justify-center ${
         loading ? "opacity-50" : "active:opacity-70"
       }`}
     >

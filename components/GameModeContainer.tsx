@@ -1,35 +1,76 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
-  Image,
   Pressable,
+  Image,
   ImageSourcePropType,
+  ImageResizeMode,
+  StyleSheet,
+  useWindowDimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
 type Props = {
   title: string;
-  imageSrc: ImageSourcePropType;
   href: string;
+  imageSrc: ImageSourcePropType;
   gameMode: "solo" | "online" | "friends";
   onSelectGameMode?: (mode: string) => void;
   onPress?: () => void;
-  labelSide?: "left" | "right";
-  heightClassName?: string;
 };
+
+const modeStyles = {
+  friends: {
+    icon: "people",
+    eyebrow: "Crew mode",
+    description: "Create a room and invite your people.",
+    accent: "#F5C125",
+    resizeMode: "cover",
+    imageScale: 1,
+  },
+  solo: {
+    icon: "sparkles",
+    eyebrow: "Solo run",
+    description: "Practice categories at your pace.",
+    accent: "#57C96B",
+    resizeMode: "cover",
+    imageScale: 1,
+  },
+  online: {
+    icon: "globe-outline",
+    eyebrow: "Online table",
+    description: "Find a match and jump into a round.",
+    accent: "#E81D1D",
+    resizeMode: "contain",
+    imageScale: 0.92,
+  },
+} satisfies Record<
+  Props["gameMode"],
+  {
+    icon: keyof typeof Ionicons.glyphMap;
+    eyebrow: string;
+    description: string;
+    accent: string;
+    resizeMode: ImageResizeMode;
+    imageScale: number;
+  }
+>;
 
 export default function GameModeContainer({
   title,
-  imageSrc,
   href,
+  imageSrc,
   onPress,
   gameMode,
   onSelectGameMode,
-  labelSide = "left",
-  heightClassName = "h-52",
 }: Props) {
   const router = useRouter();
+  const { height, width } = useWindowDimensions();
+  const style = modeStyles[gameMode];
+  const cardHeight = Math.min(240, Math.max(178, height * 0.22));
+  const titleSize = width > 390 ? 30 : 27;
 
   const handlePress = () => {
     onSelectGameMode?.(gameMode);
@@ -48,17 +89,66 @@ export default function GameModeContainer({
 
   return (
     <Pressable onPress={handlePress} className="w-full active:opacity-90">
-      <View className=" w-full overflow-hidden relative">
-        <Image
-          source={imageSrc}
-          className={`w-full ${heightClassName}  mb-0`}
-          resizeMode="cover"
-        />
+      <View
+        className="mx-4 overflow-hidden rounded-xl bg-white"
+        style={{
+          height: cardHeight,
+          shadowColor: "#111827",
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.14,
+          shadowRadius: 20,
+          elevation: 5,
+        }}
+      >
+        <View className="absolute inset-0 bg-black">
+          <Image
+            source={imageSrc}
+            className="h-full w-full"
+            style={{ transform: [{ scale: style.imageScale }] }}
+            resizeMode={style.resizeMode}
+          />
+        </View>
 
-        <View className={`absolute bottom-10 ${labelSide}-0`}>
-          <Text className="bg-red text-white text-2xl font-light px-4 py-2">
-            {title}
-          </Text>
+        <View
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFillObject,
+            { backgroundColor: "rgba(0,0,0,0.46)" },
+          ]}
+        />
+        <View className="absolute bottom-0 left-0 right-0 px-4 py-4">
+          <View className="flex-row items-end justify-between gap-3">
+            <View className="flex-1">
+              <View
+                className="mb-2 self-start rounded-full px-2.5 py-1"
+                style={{ backgroundColor: style.accent }}
+              >
+                <Text className="text-[11px] font-light uppercase text-white">
+                  {style.eyebrow}
+                </Text>
+              </View>
+              <Text
+                className="font-light text-white"
+                style={{ fontSize: titleSize, lineHeight: titleSize + 4 }}
+              >
+                {title}
+              </Text>
+              <Text className="mt-1 max-w-[260px] text-sm font-light leading-5 text-white/95">
+                {style.description}
+              </Text>
+            </View>
+
+            <View
+              className="h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-white/95"
+              style={{
+                shadowColor: "#000",
+                shadowOpacity: 0.12,
+                shadowRadius: 8,
+              }}
+            >
+              <Ionicons name={style.icon} size={22} color={style.accent} />
+            </View>
+          </View>
         </View>
       </View>
     </Pressable>

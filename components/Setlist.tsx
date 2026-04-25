@@ -6,6 +6,14 @@ import { getSetlistsByStatus } from "../services/setlist.service";
 type SetlistItem = {
   _id: string;
   name: string;
+  categories?: {
+    name: string;
+    label?: string;
+    index: number;
+    level: string;
+    language: string;
+  }[];
+  availableLanguages?: string[];
   icon?: string;
   isCustom?: boolean;
   subtitle?: string;
@@ -34,11 +42,6 @@ export default function Setlist({ gameMode, onSetlistChange }: Props) {
     });
   }, []);
 
-  useEffect(() => {
-    console.log("This is the setlist Response:", setlists);
-    console.log("Game Mode From Setlist Component:", gameMode);
-  }, [setlists]);
-
   const customSetlist: SetlistItem = {
     _id: "custom-setlist",
     name: "Custom Setlist",
@@ -63,12 +66,14 @@ export default function Setlist({ gameMode, onSetlistChange }: Props) {
     const isSelected = selectedSetlist?._id === sl._id;
     const isCustom = sl.isCustom || false;
     const iconName = getSetlistIcon(sl);
+    const categories = sl.categories || [];
+    const languages = sl.availableLanguages || [];
 
     return (
       <Pressable
         key={sl._id}
         onPress={() => handleSelectSetlist(sl)}
-        className={`rounded-lg p-4 flex-row items-center ${
+        className={`rounded-xl p-4 ${
           isSelected
             ? "bg-black"
             : isCustom
@@ -76,36 +81,55 @@ export default function Setlist({ gameMode, onSetlistChange }: Props) {
             : "bg-white border border-gray-200"
         }`}
       >
-        <Ionicons
-          name={iconName as any}
-          size={24}
-          color={isSelected ? "white" : isCustom ? "black" : "black"}
-        />
-        <View className="ml-4 flex-1">
-          <Text
-            className={`text-lg font-medium ${
-              isSelected ? "text-white" : isCustom ? "text-black" : "text-black"
-            }`}
-          >
-            {sl.name}
-          </Text>
-          {sl.subtitle && (
+        <View className="flex-row items-center">
+          <Ionicons
+            name={iconName as any}
+            size={24}
+            color={isSelected ? "white" : isCustom ? "black" : "black"}
+          />
+          <View className="ml-4 flex-1">
             <Text
-              className={`text-sm ${
-                isSelected
-                  ? "text-gray-300"
-                  : isCustom
-                  ? "text-gray-700"
-                  : "text-gray-600"
+              className={`text-lg font-medium ${
+                isSelected ? "text-white" : isCustom ? "text-black" : "text-black"
               }`}
             >
-              {sl.subtitle}
+              {sl.name}
             </Text>
+            <Text
+              className={`text-sm ${
+                isSelected ? "text-gray-300" : isCustom ? "text-gray-700" : "text-gray-600"
+              }`}
+            >
+              {sl.subtitle ||
+                `${categories.length || 0} categories${
+                  languages.length ? ` · ${languages.join(", ").toUpperCase()}` : ""
+                }`}
+            </Text>
+          </View>
+          {isSelected && <Ionicons name="checkmark" size={24} color="white" />}
+          {isCustom && !isSelected && (
+            <Ionicons name="chevron-forward" size={24} color="black" />
           )}
         </View>
-        {isSelected && <Ionicons name="checkmark" size={24} color="white" />}
-        {isCustom && !isSelected && (
-          <Ionicons name="chevron-forward" size={24} color="black" />
+
+        {isSelected && categories.length > 0 && (
+          <View className="mt-4 border-t border-white/20 pt-4">
+            <Text className="mb-2 text-xs font-light uppercase text-gray-300">
+              Categories
+            </Text>
+            <View className="flex-row flex-wrap gap-2">
+              {categories.map((category) => (
+                <View
+                  key={`${sl._id}-${category.name}`}
+                  className="rounded-full bg-white/15 px-3 py-1"
+                >
+                  <Text className="text-sm text-white">
+                    {category.label || category.name}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
         )}
       </Pressable>
     );

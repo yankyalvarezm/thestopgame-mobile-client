@@ -8,13 +8,13 @@ import ModalJoinCreate from "@/components/ModalJoinCreate";
 
 export default function GameModes() {
   const [showModal, setShowModal] = useState(false);
-  const [gameMode, setGameMode] = useState<string | null>(null);
+  const [, setGameMode] = useState<string | null>(null);
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-1 flex-col justify-between px-0">
+    <SafeAreaView className="flex-1 bg-[#F7F7F4]">
+      <View className="flex-1 flex-col px-0">
         {/* 🔝 Title arriba */}
-        <View className="items-center pt-6">
+        <View className="items-center pt-5 pb-3">
           <TheStopGameTitle />
         </View>
         {/* Content en el medio */}
@@ -24,34 +24,33 @@ export default function GameModes() {
           onCreate={() => console.log("Create")}
           onClose={() => setShowModal(false)}
         />
-        <GameModeContainer
-          title="Play with Friends"
-          imageSrc={require("../assets/images/play-with-friends.png")}
-          labelSide="left"
-          href="/categories"
-          gameMode="friends"
-          onSelectGameMode={(mode) => setGameMode(mode)}
-          onPress={() => setShowModal(true)}
-        />
-        <GameModeContainer
-          title="Play Solo"
-          imageSrc={require("../assets/images/play-solo.png")}
-          labelSide="right"
-          href="/categories"
-          gameMode="solo"
-          onSelectGameMode={(mode) => setGameMode(mode)}
-        />
-        <GameModeContainer
-          title="Play Online"
-          imageSrc={require("../assets/images/play-online-adjusted.png")}
-          labelSide="left"
-          href="/categories"
-          gameMode="online"
-          onSelectGameMode={(mode) => setGameMode(mode)}
-        />
+        <View className="flex-1 justify-center gap-3">
+          <GameModeContainer
+            title="Play with Friends"
+            href="/categories"
+            gameMode="friends"
+            imageSrc={require("../assets/images/game-modes/friends-card.png")}
+            onSelectGameMode={(mode) => setGameMode(mode)}
+            onPress={() => setShowModal(true)}
+          />
+          <GameModeContainer
+            title="Play Solo"
+            href="/categories"
+            gameMode="solo"
+            imageSrc={require("../assets/images/game-modes/solo-card.png")}
+            onSelectGameMode={(mode) => setGameMode(mode)}
+          />
+          <GameModeContainer
+            title="Play Online"
+            href="/categories"
+            gameMode="online"
+            imageSrc={require("../assets/images/game-modes/online-card.png")}
+            onSelectGameMode={(mode) => setGameMode(mode)}
+          />
+        </View>
 
         {/* ⬇️ Copyright abajo */}
-        <View className="items-center pb-4">
+        <View className="items-center pb-4 pt-3">
           <CopyRight />
         </View>
       </View>

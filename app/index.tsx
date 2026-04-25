@@ -1,5 +1,4 @@
-import { Link } from "expo-router";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import ModalHowToPlay from "../components/ModalHowToPlay";
@@ -24,14 +23,16 @@ export default function Index() {
             Un juego dominicano, hecho por dominicanos 🇩🇴
           </Text>
 
-          <View className="mt-6 flex-col gap-3">
+          <View className="mt-6 w-full flex-col gap-3">
             <View className="flex-row gap-3">
-              <PlayNow />
-              <HowToPlay onPress={() => setShowHowToPlay(true)} />
+              <View className="flex-1">
+                <PlayNow />
+              </View>
+              <View className="flex-1">
+                <HowToPlay onPress={() => setShowHowToPlay(true)} />
+              </View>
             </View>
-            <View className="flex-row w-full gap-3">
-              <LogOut />
-            </View>
+            <LogOut />
           </View>
           <View className="mt-6">
             <Text className="text-xs text-gray-500 text-center">
