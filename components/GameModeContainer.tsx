@@ -19,6 +19,8 @@ type Props = {
   gameMode: "solo" | "online" | "friends";
   onSelectGameMode?: (mode: string) => void;
   onPress?: () => void;
+  disabled?: boolean;
+  badgeText?: string;
 };
 
 const modeStyles = {
@@ -65,6 +67,8 @@ export default function GameModeContainer({
   onPress,
   gameMode,
   onSelectGameMode,
+  disabled = false,
+  badgeText = "Coming soon",
 }: Props) {
   const router = useRouter();
   const { height, width } = useWindowDimensions();
@@ -73,6 +77,8 @@ export default function GameModeContainer({
   const titleSize = width > 390 ? 30 : 27;
 
   const handlePress = () => {
+    if (disabled) return;
+
     onSelectGameMode?.(gameMode);
 
     if (onPress) return onPress();
@@ -88,7 +94,11 @@ export default function GameModeContainer({
   };
 
   return (
-    <Pressable onPress={handlePress} className="w-full active:opacity-90">
+    <Pressable
+      onPress={handlePress}
+      disabled={disabled}
+      className={`w-full ${disabled ? "" : "active:opacity-90"}`}
+    >
       <View
         className="mx-4 overflow-hidden rounded-xl bg-white"
         style={{
@@ -113,9 +123,16 @@ export default function GameModeContainer({
           pointerEvents="none"
           style={[
             StyleSheet.absoluteFillObject,
-            { backgroundColor: "rgba(0,0,0,0.46)" },
+            { backgroundColor: disabled ? "rgba(0,0,0,0.66)" : "rgba(0,0,0,0.46)" },
           ]}
         />
+        {disabled && (
+          <View className="absolute right-4 top-4 rounded-full bg-white/95 px-3 py-1.5">
+            <Text className="text-xs font-medium uppercase text-black">
+              {badgeText}
+            </Text>
+          </View>
+        )}
         <View className="absolute bottom-0 left-0 right-0 px-4 py-4">
           <View className="flex-row items-end justify-between gap-3">
             <View className="flex-1">
@@ -134,7 +151,7 @@ export default function GameModeContainer({
                 {title}
               </Text>
               <Text className="mt-1 max-w-[260px] text-sm font-light leading-5 text-white/95">
-                {style.description}
+                {disabled ? "This mode is almost ready." : style.description}
               </Text>
             </View>
 
@@ -146,7 +163,11 @@ export default function GameModeContainer({
                 shadowRadius: 8,
               }}
             >
-              <Ionicons name={style.icon} size={22} color={style.accent} />
+              <Ionicons
+                name={disabled ? "lock-closed-outline" : style.icon}
+                size={22}
+                color={disabled ? "#111827" : style.accent}
+              />
             </View>
           </View>
         </View>

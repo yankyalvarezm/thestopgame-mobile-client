@@ -7,9 +7,9 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
-import { Image } from "expo-image";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import TheStopGameTitle from "@/components/TheStopGameTitle";
 import { login } from "@/services/auth.service";
 import { router } from "expo-router";
@@ -18,10 +18,19 @@ import GoogleCredentials from "@/components/GoogleCredentials";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLogin = async () => {
-    const res = await login(email, password);
-    // console.log("login res:", res);
+    const normalizedEmail = email.trim();
+
+    if (!normalizedEmail || !password) {
+      Alert.alert("Error", "Email and password are required.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    const res = await login(normalizedEmail, password);
+    setIsSubmitting(false);
 
     if (res.success) {
       router.replace("/gameModes");
@@ -35,6 +44,7 @@ export default function Login() {
       <ScrollView
         contentContainerClassName="flex-1 items-center justify-center px-6 py-8"
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Card del formulario */}
         <View className="items-center mb-8">
@@ -77,9 +87,16 @@ export default function Login() {
           {/* Botón Login */}
           <Pressable
             onPress={handleLogin}
-            className="bg-black rounded-lg p-4 items-center justify-center active:opacity-80 mb-6"
+            disabled={isSubmitting}
+            className={`rounded-lg p-4 items-center justify-center mb-6 ${
+              isSubmitting ? "bg-gray-500" : "bg-black active:opacity-80"
+            }`}
           >
-            <Text className="text-white text-base font-medium">Login</Text>
+            {isSubmitting ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text className="text-white text-base font-medium">Login</Text>
+            )}
           </Pressable>
 
           {/* Don't have an account? Sign Up */}

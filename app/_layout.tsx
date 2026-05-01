@@ -61,7 +61,11 @@ export default function RootLayout() {
       />
       <Stack.Screen
         name="gameplay"
-        options={{ headerShown: false, title: "Game Play" }}
+        options={{
+          headerShown: false,
+          title: "Game Play",
+          gestureEnabled: false,
+        }}
       />
     </Stack>
   );

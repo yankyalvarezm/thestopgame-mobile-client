@@ -147,3 +147,39 @@ export async function createNextRound(matchId, timer) {
     };
   }
 }
+
+export async function abandonMatch(matchId) {
+  try {
+    const token = await SecureStore.getItemAsync("accessToken");
+
+    if (!token) {
+      return {
+        success: false,
+        status: 401,
+        message: "NO_AUTH_TOKEN",
+      };
+    }
+
+    const res = await axios.patch(
+      `${API_URL}/matches/${matchId}/abandon`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return res.data;
+  } catch (err) {
+    console.error("abandonMatch error:", err?.response || err);
+
+    return {
+      success: false,
+      status: err?.response?.status || 0,
+      message:
+        err?.response?.data?.message || err?.message || "ABANDON_MATCH_ERROR",
+    };
+  }
+}

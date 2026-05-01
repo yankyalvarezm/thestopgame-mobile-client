@@ -53,14 +53,6 @@ export default function SignUp() {
   const canSubmit = emailOk && passwordOk && confirmOk;
 
   const handleSignUp = async () => {
-    const res = await signup(email, password);
-    console.log("signup res:", res);
-    if (res.success) {
-      router.replace("/gameModes");
-    } else {
-      Alert.alert("Error", res.message);
-    }
-    // protección extra por si acaso
     setTouched({ email: true, password: true, confirmPassword: true });
 
     if (!emailOk) {
@@ -76,8 +68,13 @@ export default function SignUp() {
       return;
     }
 
-    // Aquí luego llamas tu backend /auth/signup o /users/signup
-    Alert.alert("✅ Ready", "User already created");
+    const res = await signup(email, password);
+
+    if (res.success) {
+      router.replace("/gameModes");
+    } else {
+      Alert.alert("Error", res.message);
+    }
   };
 
   const handleGoogleSignIn = () => {

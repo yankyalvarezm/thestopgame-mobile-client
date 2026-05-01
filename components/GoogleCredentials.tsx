@@ -3,10 +3,8 @@ import { Pressable, Text, Alert } from "react-native";
 import { Image } from "expo-image";
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
-import * as AuthSession from "expo-auth-session";
 import { router } from "expo-router";
 import { googleAuth } from "../services/auth.service";
-import * as SecureStore from "expo-secure-store";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -32,6 +30,14 @@ export default function GoogleCredentials({
   useEffect(() => {
     const run = async () => {
       if (!response) return;
+      if (response.type === "error") {
+        Alert.alert(
+          "Google Sign-In",
+          response.error?.message ||
+            "Google blocked the authorization request. Check the OAuth consent screen and test users in Google Cloud."
+        );
+        return;
+      }
       if (response.type !== "success") return;
 
       const idToken =

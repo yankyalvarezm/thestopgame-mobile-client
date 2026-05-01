@@ -31,7 +31,8 @@ export default function GameModes() {
             gameMode="friends"
             imageSrc={require("../assets/images/game-modes/friends-card.png")}
             onSelectGameMode={(mode) => setGameMode(mode)}
-            onPress={() => setShowModal(true)}
+            disabled
+            badgeText="Coming soon"
           />
           <GameModeContainer
             title="Play Solo"
@@ -46,6 +47,8 @@ export default function GameModes() {
             gameMode="online"
             imageSrc={require("../assets/images/game-modes/online-card.png")}
             onSelectGameMode={(mode) => setGameMode(mode)}
+            disabled
+            badgeText="Coming soon"
           />
         </View>
 

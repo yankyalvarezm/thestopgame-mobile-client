@@ -50,10 +50,15 @@ export async function me() {
 
 export async function login(email, password) {
   try {
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+
     const res = await axios.post(
       `${API_URL}/auth/login`,
-      { email, password },
-      { headers: { "Content-Type": "application/json" } }
+      { email: normalizedEmail, password },
+      {
+        headers: { "Content-Type": "application/json" },
+        timeout: 15000,
+      }
     );
 
     // backend: { success: true, data: { token, user } }
@@ -73,8 +78,9 @@ export async function login(email, password) {
     return { success: true, status: res.status, user };
   } catch (err) {
     const status = err?.response?.status || 0;
-    const message =
-      err?.response?.data?.message || err?.message || "LOGIN_ERROR";
+    const message = status
+      ? err?.response?.data?.message || "LOGIN_ERROR"
+      : "No se pudo conectar con el servidor. Revisa que el backend esté corriendo y que tu celular esté en la misma red.";
 
     return { success: false, status, message };
   }

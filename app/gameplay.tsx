@@ -1,4 +1,13 @@
-import { Text, View, SafeAreaView, Pressable, Animated } from "react-native";
+import {
+  Text,
+  View,
+  SafeAreaView,
+  Pressable,
+  Animated,
+  ScrollView,
+  Alert,
+  BackHandler,
+} from "react-native";
 import React, {
   useState,
   useEffect,
@@ -7,10 +16,14 @@ import React, {
   useRef,
 } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import TheStopGameTitle from "@/components/TheStopGameTitle";
 import CarruselValidation from "@/components/CarruselValidation";
 import { finishRound, startRound } from "@/services/round.service";
-import { createNextRound } from "@/services/match.service";
+import { abandonMatch, createNextRound } from "@/services/match.service";
+import { Ionicons } from "@expo/vector-icons";
+
+const POINTS_PER_CORRECT_ANSWER = 10;
 
 type GameplayPhase = "countdown" | "shuffle" | "playing" | "summary";
 type ValidationState = "idle" | "checking" | "correct" | "incorrect";
@@ -29,8 +42,9 @@ type RoundSummary = {
     isCorrect: boolean;
     points: number;
   }[];
+  matchRoundsSummary?: MatchRoundSummary[];
   result: {
-    didWin: boolean;
+    didWin: boolean | null;
     isFinalRound: boolean;
     roundPoints: number;
     totalPoints: number;
@@ -38,7 +52,22 @@ type RoundSummary = {
     roundWinningPoints: number;
     matchWinningPoints: number;
     maxPossiblePoints: number;
+    winRule?: {
+      difficulty: string;
+      threshold: number;
+      percent: number;
+    };
   };
+};
+type MatchRoundSummary = {
+  roundId: string;
+  roundNumber: number;
+  letter: string;
+  status: string;
+  points: number;
+  correctAnswers: number;
+  totalAnswers: number;
+  answerResults: RoundSummary["answerResults"];
 };
 
 export default function Gameplay() {
@@ -83,10 +112,14 @@ export default function Gameplay() {
   const [roundFinished, setRoundFinished] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [summary, setSummary] = useState<RoundSummary | null>(null);
+  const [latestResult, setLatestResult] = useState<RoundSummary["result"] | null>(
+    null
+  );
   const [validation, setValidation] = useState<Record<string, ValidationState>>(
     {}
   );
   const summaryAnim = useRef(new Animated.Value(0)).current;
+  const resultIconAnim = useRef(new Animated.Value(0)).current;
   const [roundState, setRoundState] = useState<RoundState>({
     id: roundId || "",
     roundNumber: Number(currentRound || 1),
@@ -108,6 +141,20 @@ export default function Gameplay() {
     roundState.maxDuration
   );
   const timerLabel = formatTimer(remainingSeconds);
+  const initialWinRule = getClientWinRule(
+    (difficulty || "medium").toString(),
+    roundState.maxDuration
+  );
+  const maxPossiblePoints =
+    totalRounds * Math.max(categories.length, 1) * POINTS_PER_CORRECT_ANSWER;
+  const pointsNeeded =
+    latestResult?.matchWinningPoints ||
+    Math.ceil(maxPossiblePoints * initialWinRule.threshold);
+  const currentTotalPoints = latestResult?.totalPoints || 0;
+  const progressPercent = Math.min(
+    100,
+    Math.round((currentTotalPoints / pointsNeeded) * 100)
+  );
   const isTimeUp =
     phase === "playing" && roundState.maxDuration > 0 && remainingSeconds <= 0;
   const isFinalRound = roundState.roundNumber >= totalRounds;
@@ -135,6 +182,51 @@ export default function Gameplay() {
     setValidation({});
     setActiveIndex(0);
   }, []);
+
+  const handleExitGame = useCallback(() => {
+    if (phase === "summary" && isFinalRound) {
+      router.replace("/gameModes");
+      return;
+    }
+
+    Alert.alert(
+      "Leave this game?",
+      "If you leave now, this match will be cancelled and your round progress will be lost.",
+      [
+        { text: "Stay", style: "cancel" },
+        {
+          text: "Leave",
+          style: "destructive",
+          onPress: async () => {
+            setRoundFinished(true);
+
+            if (matchId) {
+              const response = await abandonMatch(matchId);
+              if (!response?.success) {
+                console.warn("abandonMatch failed:", response?.message);
+              }
+            }
+
+            router.replace("/gameModes");
+          },
+        },
+      ]
+    );
+  }, [isFinalRound, matchId, phase, router]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        () => {
+          handleExitGame();
+          return true;
+        }
+      );
+
+      return () => subscription.remove();
+    }, [handleExitGame])
+  );
 
   useEffect(() => {
     if (phase !== "countdown") return;
@@ -196,19 +288,25 @@ export default function Gameplay() {
     if (!roundState.id || !isTimeUp || roundFinished) return;
 
     setRoundFinished(true);
-    finishRound(roundState.id, "completed", buildAnswersPayload(answers)).then((response) => {
+    finishRound(
+      roundState.id,
+      "completed",
+      buildAnswersPayload(answers, categories)
+    ).then((response) => {
       if (!response?.success) {
         console.warn("finishRound failed:", response?.message);
       }
       if (response?.data) {
         setSummary({
           answerResults: response.data.answerResults || [],
+          matchRoundsSummary: response.data.matchRoundsSummary || [],
           result: response.data.result,
         });
+        setLatestResult(response.data.result);
       }
       setPhase("summary");
     });
-  }, [answers, isTimeUp, roundFinished, roundState.id]);
+  }, [answers, categories, isTimeUp, roundFinished, roundState.id]);
 
   const handleStopRound = async () => {
     if (!roundState.id || roundFinished || phase !== "playing") return;
@@ -217,7 +315,7 @@ export default function Gameplay() {
     const response = await finishRound(
       roundState.id,
       "stopped",
-      buildAnswersPayload(answers)
+      buildAnswersPayload(answers, categories)
     );
 
     if (!response?.success) {
@@ -229,8 +327,10 @@ export default function Gameplay() {
     if (response?.data) {
       setSummary({
         answerResults: response.data.answerResults || [],
+        matchRoundsSummary: response.data.matchRoundsSummary || [],
         result: response.data.result,
       });
+      setLatestResult(response.data.result);
     }
     setPhase("summary");
   };
@@ -259,103 +359,360 @@ export default function Gameplay() {
   useEffect(() => {
     if (phase !== "summary") {
       summaryAnim.setValue(0);
+      resultIconAnim.setValue(0);
       return;
     }
 
-    Animated.spring(summaryAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      friction: 8,
-      tension: 60,
-    }).start();
-  }, [phase, summaryAnim]);
+    Animated.parallel([
+      Animated.spring(summaryAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        friction: 8,
+        tension: 60,
+      }),
+      Animated.sequence([
+        Animated.timing(resultIconAnim, {
+          toValue: 0.35,
+          duration: 120,
+          useNativeDriver: true,
+        }),
+        Animated.spring(resultIconAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+          friction: 4,
+          tension: 90,
+        }),
+      ]),
+    ]).start();
+  }, [phase, resultIconAnim, summaryAnim]);
 
   if (phase === "summary") {
     const answerResults = summary?.answerResults || [];
     const result = summary?.result;
+    const matchRoundsSummary = summary?.matchRoundsSummary || [];
+    const finalDidWin = result?.isFinalRound ? !!result.didWin : null;
+    const summaryTitle = result?.isFinalRound
+      ? finalDidWin
+        ? "You won!"
+        : "You lost"
+      : `Round ${roundState.roundNumber} complete`;
+    const summarySubtitle = result?.isFinalRound
+      ? finalDidWin
+        ? "You reached the final target."
+        : "You needed a few more points."
+      : "Your points are saved. Keep going.";
+    const accentColor =
+      finalDidWin === null
+      ? "#111827"
+      : finalDidWin
+      ? "#16A34A"
+      : "#E81D1D";
+    const panelBackground =
+      finalDidWin === null
+        ? "#FFFFFF"
+        : finalDidWin
+        ? "#DCFCE7"
+        : "#FEE2E2";
+    const panelBorder =
+      finalDidWin === null
+        ? "#E5E7EB"
+        : finalDidWin
+        ? "#86EFAC"
+        : "#FCA5A5";
+    const finalProgressPercent = result
+      ? Math.min(
+          100,
+          Math.round((result.totalPoints / result.matchWinningPoints) * 100)
+        )
+      : 0;
 
     return (
-      <SafeAreaView className="flex-1 bg-[#F7F7F4]">
+      <SafeAreaView
+        className="flex-1"
+        style={{ backgroundColor: result?.isFinalRound ? panelBackground : "#F7F7F4" }}
+      >
         <View className="flex-1 px-6">
           <View className="items-center pt-4">
             <TheStopGameTitle />
           </View>
 
-          <Animated.View
-            className="mt-10 rounded-2xl bg-white p-5"
-            style={{
-              opacity: summaryAnim,
-              transform: [
-                {
-                  translateY: summaryAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [24, 0],
-                  }),
-                },
-                {
-                  scale: summaryAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.96, 1],
-                  }),
-                },
-              ],
-            }}
+          <ScrollView
+            className="flex-1"
+            contentContainerClassName="pb-4"
+            showsVerticalScrollIndicator={false}
           >
-            <Text className="text-xs font-light uppercase text-gray-500">
-              Round {roundState.roundNumber} summary
-            </Text>
-            <Text
-              className={`mt-1 text-3xl font-light ${
-                result?.didWin ? "text-green-600" : "text-red"
-              }`}
+            <Animated.View
+              className="mt-8 rounded-2xl bg-white p-5"
+              style={{
+                opacity: summaryAnim,
+                borderWidth: result?.isFinalRound ? 1.5 : 1,
+                borderColor: result?.isFinalRound ? panelBorder : "#E5E7EB",
+                backgroundColor: result?.isFinalRound ? panelBackground : "#FFFFFF",
+                shadowColor: accentColor,
+                shadowOffset: { width: 0, height: 18 },
+                shadowOpacity: result?.isFinalRound ? 0.2 : 0.08,
+                shadowRadius: 26,
+                elevation: result?.isFinalRound ? 6 : 3,
+                transform: [
+                  {
+                    translateY: summaryAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [28, 0],
+                    }),
+                  },
+                  {
+                    scale: summaryAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.92, 1],
+                    }),
+                  },
+                ],
+              }}
             >
-              {result?.didWin ? "You won" : "You lost"}
-            </Text>
-            <Text className="mt-2 text-base font-light text-gray-600">
-              {result
-                ? `${result.totalPoints} total pts · ${result.winningPoints} needed`
-                : "Calculating points..."}
-            </Text>
-
-            <View className="mt-5 gap-3">
-              {(answerResults.length ? answerResults : categories).map((category) => {
-                const categoryName = "categoryName" in category ? category.categoryName : category.name;
-                const answer =
-                  "answer" in category
-                    ? category.answer?.trim() || "No answer"
-                    : answers[category.name]?.trim() || "No answer";
-                const isCorrect =
-                  "isCorrect" in category
-                    ? category.isCorrect
-                    : validation[category.name] === "correct";
-                const points = "points" in category ? category.points : 0;
-                return (
-                  <View
-                    key={categoryName}
-                    className="rounded-xl border border-gray-200 bg-[#F7F7F4] px-4 py-3"
+              <View className="flex-row items-center gap-4">
+                <Animated.View
+                  className="h-16 w-16 items-center justify-center rounded-full"
+                  style={{
+                    backgroundColor: `${accentColor}18`,
+                    transform: [
+                      {
+                        scale: resultIconAnim.interpolate({
+                          inputRange: [0, 0.35, 1],
+                          outputRange: [0.4, 1.25, 1],
+                        }),
+                      },
+                      {
+                        rotate: resultIconAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ["-12deg", "0deg"],
+                        }),
+                      },
+                    ],
+                  }}
+                >
+                  <Ionicons
+                    name={
+                      finalDidWin === null
+                        ? "flag-outline"
+                        : finalDidWin
+                        ? "trophy"
+                        : "close-circle"
+                    }
+                    size={34}
+                    color={accentColor}
+                  />
+                </Animated.View>
+                <View className="flex-1">
+                  <Text className="text-xs font-light uppercase text-gray-500">
+                    {result?.isFinalRound
+                      ? "Final result"
+                      : `Round ${roundState.roundNumber} summary`}
+                  </Text>
+                  <Text
+                    className="mt-1 text-3xl font-light"
+                    style={{ color: accentColor }}
                   >
+                    {summaryTitle}
+                  </Text>
+                  <Text className="mt-1 text-sm font-light text-gray-500">
+                    {summarySubtitle}
+                  </Text>
+                </View>
+              </View>
+
+              <View className="mt-6 rounded-2xl bg-[#F7F7F4] p-4">
+                <View className="flex-row justify-between">
+                  <View>
                     <Text className="text-xs font-light uppercase text-gray-500">
-                      {category.label}
+                      Round points
                     </Text>
-                    <View className="mt-1 flex-row items-center justify-between gap-3">
-                      <Text className="flex-1 text-lg font-light text-black">
-                        {answer}
+                    <Text className="mt-1 text-2xl font-light text-black">
+                      +{result?.roundPoints || 0}
+                    </Text>
+                  </View>
+                  <View className="items-end">
+                    <Text className="text-xs font-light uppercase text-gray-500">
+                      Total target
+                    </Text>
+                    <Text className="mt-1 text-2xl font-light text-black">
+                      {result
+                        ? `${result.totalPoints}/${result.matchWinningPoints}`
+                        : "--"}
+                    </Text>
+                  </View>
+                </View>
+                {result && (
+                  <View className="mt-4 h-2 overflow-hidden rounded-full bg-white">
+                    <View
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          Math.round(
+                            (result.totalPoints / result.matchWinningPoints) *
+                              100
+                          )
+                        )}%`,
+                        backgroundColor: accentColor,
+                      }}
+                    />
+                  </View>
+                )}
+                {result?.winRule && (
+                  <Text className="mt-3 text-xs font-light text-gray-500">
+                    You need {result.matchWinningPoints} points to win.{" "}
+                    {capitalize(result.winRule.difficulty)} target is{" "}
+                    {result.winRule.percent}% of the possible points.
+                  </Text>
+                )}
+              </View>
+
+              {result?.isFinalRound && (
+                <View className="mt-5 rounded-2xl bg-white/80 p-4">
+                  <View className="flex-row items-center justify-between">
+                    <Text className="text-xs font-light uppercase text-gray-500">
+                      Match progress
+                    </Text>
+                    <Text className="text-sm font-semibold text-black">
+                      {finalProgressPercent}%
+                    </Text>
+                  </View>
+                  <View className="mt-3 h-3 overflow-hidden rounded-full bg-white">
+                    <View
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${finalProgressPercent}%`,
+                        backgroundColor: accentColor,
+                      }}
+                    />
+                  </View>
+                  <View className="mt-4 flex-row justify-between">
+                    <View>
+                      <Text className="text-xs font-light uppercase text-gray-500">
+                        Your points
                       </Text>
-                      <Text
-                        className={`text-sm font-medium ${
-                          isCorrect
-                            ? "text-green-600"
-                            : "text-red"
-                        }`}
-                      >
-                        {isCorrect ? `+${points}` : "+0"}
+                      <Text className="text-2xl font-light text-black">
+                        {result.totalPoints}
+                      </Text>
+                    </View>
+                    <View className="items-end">
+                      <Text className="text-xs font-light uppercase text-gray-500">
+                        Needed
+                      </Text>
+                      <Text className="text-2xl font-light text-black">
+                        {result.matchWinningPoints}
                       </Text>
                     </View>
                   </View>
-                );
-              })}
-            </View>
-          </Animated.View>
+                </View>
+              )}
+
+              {result?.isFinalRound && matchRoundsSummary.length > 0 && (
+                <View className="mt-5 gap-3">
+                  <Text className="text-xs font-light uppercase text-gray-500">
+                    Rounds recap
+                  </Text>
+                  {matchRoundsSummary.map((round) => {
+                    const roundPercent = round.totalAnswers
+                      ? Math.round(
+                          (round.correctAnswers / round.totalAnswers) * 100
+                        )
+                      : 0;
+                    const roundGood = round.correctAnswers > 0;
+
+                    return (
+                      <View
+                        key={round.roundId}
+                        className={`rounded-xl border px-4 py-3 ${
+                          roundGood
+                            ? "border-green-200 bg-green-50"
+                            : "border-red/30 bg-red-50"
+                        }`}
+                      >
+                        <View className="flex-row items-center justify-between gap-3">
+                          <View>
+                            <Text className="text-xs font-light uppercase text-gray-500">
+                              Round {round.roundNumber} · Letter{" "}
+                              {round.letter.toUpperCase()}
+                            </Text>
+                            <Text className="mt-1 text-lg font-light text-black">
+                              {round.correctAnswers} correct of{" "}
+                              {round.totalAnswers}
+                            </Text>
+                          </View>
+                          <Text
+                            className={`text-base font-semibold ${
+                              roundGood ? "text-green-700" : "text-red"
+                            }`}
+                          >
+                            +{round.points}
+                          </Text>
+                        </View>
+                        <View className="mt-3 h-2 overflow-hidden rounded-full bg-white">
+                          <View
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${roundPercent}%`,
+                              backgroundColor: roundGood
+                                ? "#16A34A"
+                                : "#E81D1D",
+                            }}
+                          />
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+
+              {!result?.isFinalRound && (
+                <View className="mt-5 gap-3">
+                  {(answerResults.length ? answerResults : categories).map((category) => {
+                    const categoryName =
+                      "categoryName" in category
+                        ? category.categoryName
+                        : category.name;
+                    const answer =
+                      "answer" in category
+                        ? category.answer?.trim() || "No answer"
+                        : answers[category.name]?.trim() || "No answer";
+                    const isCorrect =
+                      "isCorrect" in category
+                        ? category.isCorrect
+                        : validation[category.name] === "correct";
+                    const points = "points" in category ? category.points : 0;
+                    const cardClasses = isCorrect
+                      ? "border-green-300 bg-green-50"
+                      : "border-red/30 bg-red-50";
+                    const pointsClasses = isCorrect
+                      ? "text-green-700"
+                      : "text-red";
+
+                    return (
+                      <View
+                        key={categoryName}
+                        className={`rounded-xl border px-4 py-3 ${cardClasses}`}
+                      >
+                        <View className="flex-row items-center justify-between gap-3">
+                          <Text className="text-xs font-light uppercase text-gray-500">
+                            {category.label}
+                          </Text>
+                          <Text
+                            className={`text-sm font-semibold ${pointsClasses}`}
+                          >
+                            {isCorrect ? `+${points}` : "+0"}
+                          </Text>
+                        </View>
+                        <Text className="mt-1 text-lg font-light text-black">
+                          {answer}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </Animated.View>
+          </ScrollView>
 
           <View className="mt-auto pb-6 pt-4">
             {!isFinalRound ? (
@@ -401,6 +758,14 @@ export default function Gameplay() {
   if (phase === "countdown" || phase === "shuffle") {
     return (
       <SafeAreaView className="flex-1 bg-white">
+        <Pressable
+          onPress={handleExitGame}
+          className="absolute right-5 top-16 z-10 rounded-full bg-black/5 px-4 py-2"
+        >
+          <Text className="text-xs font-light uppercase text-gray-500">
+            Exit
+          </Text>
+        </Pressable>
         <View className="flex-1 items-center justify-center px-6">
           <Text className="text-center text-xl font-light text-gray-600">
             Round {roundState.roundNumber} starts in
@@ -431,6 +796,12 @@ export default function Gameplay() {
       <View className="items-center pt-4">
         <TheStopGameTitle />
       </View>
+      <Pressable
+        onPress={handleExitGame}
+        className="absolute right-5 top-16 z-10 rounded-full bg-black/5 px-4 py-2"
+      >
+        <Text className="text-xs font-light uppercase text-gray-500">Exit</Text>
+      </Pressable>
 
       {/* CONTENT */}
       <View className="flex-1 w-full">
@@ -439,6 +810,23 @@ export default function Gameplay() {
           <Text className="text-black font-roboto text-3xl">
             {roundState.roundNumber} | {totalRounds}
           </Text>
+        </View>
+
+        <View className="mx-6 mt-4 rounded-2xl bg-[#F7F7F4] px-4 py-3">
+          <View className="flex-row items-center justify-between">
+            <Text className="text-xs font-light uppercase text-gray-500">
+              Points needed
+            </Text>
+            <Text className="text-sm font-semibold text-black">
+              {currentTotalPoints}/{pointsNeeded} · {progressPercent}%
+            </Text>
+          </View>
+          <View className="mt-2 h-2 overflow-hidden rounded-full bg-white">
+            <View
+              className="h-full rounded-full bg-black"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </View>
         </View>
 
         <View className="bg-red rounded-lg mt-4 w-[90%] self-center items-center justify-center">
@@ -503,10 +891,13 @@ export default function Gameplay() {
   );
 }
 
-function buildAnswersPayload(answers: Record<string, string>) {
-  return Object.entries(answers).map(([categoryName, answer]) => ({
-    categoryName,
-    answer,
+function buildAnswersPayload(
+  answers: Record<string, string>,
+  categories: { name: string }[]
+) {
+  return categories.map((category) => ({
+    categoryName: category.name,
+    answer: answers[category.name] || "",
   }));
 }
 
@@ -564,4 +955,40 @@ function parseJsonArray<T>(value?: string): T[] {
 function formatCategoryName(name: string) {
   const cleaned = name.replace(/s$/, "");
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function getClientWinRule(difficulty: string, maxDuration: number) {
+  const rules = {
+    easy: { baseThreshold: 0.5, minThreshold: 0.4, maxThreshold: 0.65 },
+    medium: { baseThreshold: 0.7, minThreshold: 0.55, maxThreshold: 0.8 },
+    hard: { baseThreshold: 0.85, minThreshold: 0.7, maxThreshold: 0.9 },
+  };
+  const rule = rules[difficulty as keyof typeof rules] || rules.medium;
+  const threshold = clamp(
+    rule.baseThreshold + getTimerThresholdModifier(maxDuration),
+    rule.minThreshold,
+    rule.maxThreshold
+  );
+
+  return {
+    threshold,
+    percent: Math.round(threshold * 100),
+  };
+}
+
+function getTimerThresholdModifier(maxDuration: number) {
+  if (!maxDuration || maxDuration > 1000000) return 0.1;
+  if (maxDuration >= 90) return 0.05;
+  if (maxDuration >= 60) return 0;
+  if (maxDuration >= 30) return -0.05;
+  if (maxDuration >= 20) return -0.1;
+  return -0.15;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
 }
