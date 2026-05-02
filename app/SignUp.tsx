@@ -8,11 +8,11 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
-import { Image } from "expo-image";
 import React, { useMemo, useState } from "react";
 import TheStopGameTitle from "@/components/TheStopGameTitle";
 import { router } from "expo-router";
 import { signup } from "@/services/users.service";
+import GoogleCredentials from "@/components/GoogleCredentials";
 
 function isValidEmail(email: string) {
   // simple y suficiente para UI (el backend valida de verdad)
@@ -77,10 +77,6 @@ export default function SignUp() {
     }
   };
 
-  const handleGoogleSignIn = () => {
-    console.log("Google Sign In");
-  };
-
   return (
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView
@@ -93,19 +89,7 @@ export default function SignUp() {
         </View>
 
         <View className="bg-gray-100 rounded-2xl p-6 w-full max-w-md">
-          <Pressable
-            onPress={handleGoogleSignIn}
-            className="bg-white rounded-lg p-4 flex-row items-center justify-center active:opacity-80 mb-4 border border-gray-200"
-          >
-            <Image
-              source={require("../assets/images/google-logo.png")}
-              style={{ width: 20, height: 20, marginRight: 12 }}
-              contentFit="contain"
-            />
-            <Text className="text-black text-base font-light">
-              Sign up with google
-            </Text>
-          </Pressable>
+          <GoogleCredentials buttonText="Sign up with Google" />
 
           <View className="flex-row items-center justify-center mb-4">
             <View className="flex-1 h-px bg-gray-300" />

@@ -5,7 +5,6 @@ import { router } from "expo-router";
 const LogOut = () => {
   const handleLogout = async () => {
     const res = await logout();
-    console.log("logout res:", res);
     if (res.success) {
       router.replace("/");
     } else {

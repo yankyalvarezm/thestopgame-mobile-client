@@ -128,9 +128,7 @@ export const googleAuth = async (idToken) => {
     const isNewUser =
       res?.data?.data?.isNewUser ?? res?.data?.isNewUser ?? false;
 
-    // 🔒 Validación fuerte del token
     if (!token || typeof token !== "string") {
-      console.error("INVALID TOKEN FROM BACKEND:", token);
       return {
         success: false,
         status: res.status,

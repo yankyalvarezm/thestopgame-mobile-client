@@ -26,7 +26,6 @@ export default function GoogleCredentials({
     scopes: ["openid", "profile", "email"],
   });
 
-  //   console.log("Auth request URL:", request?.url);
   useEffect(() => {
     const run = async () => {
       if (!response) return;
@@ -55,18 +54,13 @@ export default function GoogleCredentials({
         return;
       }
 
-      // ✅ Guarda token de tu app
-
       if (data.isNewUser) {
         router.replace("/gameModes");
         Alert.alert("Bienvenido", "Cuenta creada con Google ✅");
       } else {
-        // router.replace("/home")
         router.replace("/gameModes");
         Alert.alert("Listo", "Login exitoso ✅");
       }
-
-      console.log("BACKEND AUTH:", data);
     };
 
     run();
@@ -76,7 +70,6 @@ export default function GoogleCredentials({
     try {
       await promptAsync({ showInRecents: true });
     } catch (e) {
-      console.log("promptAsync error:", e);
       Alert.alert("Error", "No se pudo abrir Google Sign-In");
     }
   };

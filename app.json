@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "thestopgame-mobile-client",
+    "name": "the STOP Game",
     "slug": "thestopgame-mobile-client",
     "owner": "yankyalvarezm",
     "version": "1.0.0",
@@ -14,7 +14,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.thestopgame.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false

@@ -14,14 +14,11 @@ export default function PlayNow() {
       const response = await me();
 
       if (response?.success) {
-        console.log("Response from me():", response);
         router.push("/gameModes");
       } else {
         router.push("/Login"); 
-        console.log("Response from me():", response);
       }
     } catch (err) {
-      console.error("PlayNow error:", err);
       router.push("/"); 
     } finally {
       setLoading(false);

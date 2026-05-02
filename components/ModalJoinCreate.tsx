@@ -29,11 +29,7 @@ export default function ModalJoinCreate({
   };
 
   const handleCreate = () => {
-    if (onCreate) {
-      onCreate();
-    } else {
-      console.log("Create pressed");
-    }
+    onCreate?.();
   };
 
   const handleClose = () => {

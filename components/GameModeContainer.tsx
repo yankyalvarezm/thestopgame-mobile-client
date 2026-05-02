@@ -90,7 +90,7 @@ export default function GameModeContainer({
       } as any);
     }
 
-    console.log("Pressed:", title);
+    return null;
   };
 
   return (

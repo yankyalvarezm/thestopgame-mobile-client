@@ -159,18 +159,6 @@ export default function Gameplay() {
     phase === "playing" && roundState.maxDuration > 0 && remainingSeconds <= 0;
   const isFinalRound = roundState.roundNumber >= totalRounds;
 
-  useEffect(() => {
-    console.log("matchId--->>>>", matchId);
-    console.log("roundId--->>>>", roundId);
-    console.log("setlistId--->>>>", setlistId);
-    console.log("selistName--->>>>", selistName);
-    console.log("gameMode--->>>>", gameMode);
-    console.log("difficulty--->>>>", difficulty);
-    console.log("language--->>>>", language);
-    console.log("rounds--->>>>", rounds);
-    console.log("timer--->>>>", timer);
-  }, [matchId, roundId, setlistId, selistName, gameMode, difficulty, language, rounds, timer]);
-
   const resetRoundUi = useCallback((nextRound: RoundState) => {
     setRoundState(nextRound);
     setPhase("countdown");

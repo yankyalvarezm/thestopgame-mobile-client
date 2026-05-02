@@ -1,7 +1,7 @@
 import { View, Text, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import TheStopGameTitle from "../components/TheStopGameTitle";
 import Setlist from "../components/Setlist";
 
@@ -28,24 +28,12 @@ export default function Categories() {
     null
   );
 
-  useEffect(() => {
-    console.log(
-      "Seletist--->>>>",
-      selectedSetlist?.name,
-      "gameMode------->>>",
-      gameMode
-    );
-  }, [selectedSetlist, gameMode]);
-  // console.log("Game Mode:", gameMode);
-
   const handleContinue = () => {
     if (!gameMode) {
-      console.warn("No gameMode provided");
       return;
     }
 
     if (!selectedSetlist || selectedSetlist.isCustom) {
-      console.warn("No backend setlist selected");
       return;
     }
 
@@ -68,15 +56,13 @@ export default function Categories() {
         router.push("/playWithFriends");
         break;
       case "online":
-        // TODO: Navegar a la página de online cuando esté disponible
         router.push({
           pathname: "/setupsolo",
           params: setupParams,
         });
-        console.log("/setupsolo");
         break;
       default:
-        console.warn(`Unknown gameMode: ${gameMode}`);
+        return;
     }
   };
 
