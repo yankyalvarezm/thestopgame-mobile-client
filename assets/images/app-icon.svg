@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" rx="220" fill="#ffffff"/>
+  <circle cx="512" cy="512" r="356" fill="#E81D1D"/>
+  <circle cx="512" cy="512" r="302" fill="#ffffff"/>
+  <text
+    x="512"
+    y="623"
+    text-anchor="middle"
+    font-family="Arial Black, Helvetica, Arial, sans-serif"
+    font-size="430"
+    font-weight="900"
+    letter-spacing="0"
+    fill="#E81D1D">S</text>
+</svg>
